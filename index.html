@@ -13,7 +13,7 @@
             <!-- Header -->
             <div class="mb-6 pb-4 border-b">
                 <h1 class="text-3xl font-bold text-gray-800">📊 Daily Activity Report</h1>
-                <p class="text-gray-600">Team hours summary by client — <span class="text-blue-600 font-medium">click any hours cell to see full details</span></p>
+                <p class="text-gray-600">Team hours summary by client — <span class="text-blue-600 font-medium">click any hours cell or total to see full details</span></p>
             </div>
 
             <!-- Filters -->
@@ -102,7 +102,7 @@
 
     <!-- ========== DETAIL MODAL ========== -->
     <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 items-center justify-center p-4" style="display:none;">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
 
             <!-- Modal Header -->
             <div class="p-6 border-b bg-blue-600 rounded-t-xl flex items-start justify-between">
@@ -148,9 +148,11 @@
     <script>
         const REPORT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw61B6jNnrquGFItO4pkauWs9CDaIoNdStb7uWFD7ggHr2F2adZOY2rzLiDvAp4vog3/exec';
 
-        let matrixData = [];  // aggregated per client+user
-        let rawRows    = [];  // every individual activity row — cached on load, no extra fetch needed
+        let matrixData = [];
+        let rawRows    = [];
         let currentView = 'planned';
+        let allClients = [];
+        let allUsers   = [];
 
         window.addEventListener('load', async () => {
             await loadFilterOptions();
@@ -206,8 +208,10 @@
 
                 if (result.status === 'success') {
                     matrixData = result.data;
-                    rawRows    = result.rawRows || [];   // individual rows cached here
-                    buildMatrix(result.clients, result.users);
+                    rawRows    = result.rawRows || [];
+                    allClients = result.clients;
+                    allUsers   = result.users;
+                    buildMatrix(allClients, allUsers);
                     calculateTotals();
                     showStatus('Report loaded successfully!', 'success');
                     setTimeout(hideStatus, 3000);
@@ -231,6 +235,7 @@
                 return;
             }
 
+            // Header columns
             users.forEach(u => {
                 const th = document.createElement('th');
                 th.className = 'border border-gray-300 p-3 text-center font-semibold';
@@ -242,6 +247,7 @@
             thTot.textContent = 'Total';
             thead.appendChild(thTot);
 
+            // Data rows
             clients.forEach(client => {
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-gray-50';
@@ -260,8 +266,8 @@
                     if (val > 0) {
                         td.textContent = val.toFixed(2);
                         td.className   = 'border border-gray-300 p-3 text-center font-semibold text-blue-700 cursor-pointer hover:bg-blue-100 transition-colors duration-150';
-                        td.title       = `Click to see details`;
-                        td.addEventListener('click', () => openDetailModal(client, user));
+                        td.title       = `Click to see details for ${user} → ${client}`;
+                        td.addEventListener('click', () => openDetailModal(client, user, `${client}  ·  ${user}`));
                         rowTotal += val;
                     } else {
                         td.textContent = '-';
@@ -270,9 +276,17 @@
                     tr.appendChild(td);
                 });
 
+                // Row total — clickable (all users for this client)
                 const rtd = document.createElement('td');
-                rtd.className = 'border border-gray-300 p-3 text-center font-bold bg-blue-100 text-blue-900';
-                rtd.textContent = rowTotal > 0 ? rowTotal.toFixed(2) : '-';
+                if (rowTotal > 0) {
+                    rtd.textContent = rowTotal.toFixed(2);
+                    rtd.className   = 'border border-gray-300 p-3 text-center font-bold bg-blue-100 text-blue-900 cursor-pointer hover:bg-blue-200 transition-colors duration-150';
+                    rtd.title       = `Click to see all activities for ${client}`;
+                    rtd.addEventListener('click', () => openDetailModal(client, null, `All employees  ·  ${client}`));
+                } else {
+                    rtd.textContent = '-';
+                    rtd.className   = 'border border-gray-300 p-3 text-center font-bold bg-blue-100 text-blue-900';
+                }
                 tr.appendChild(rtd);
                 tbody.appendChild(tr);
             });
@@ -287,18 +301,34 @@
 
             users.forEach(user => {
                 const td = document.createElement('td');
-                td.className = 'border border-gray-300 p-3 text-center font-bold text-blue-900';
                 let col = 0;
                 matrixData.forEach(d => { if (d.user === user) col += getViewValue(d); });
-                td.textContent = col > 0 ? col.toFixed(2) : '-';
+
+                if (col > 0) {
+                    td.textContent = col.toFixed(2);
+                    td.className   = 'border border-gray-300 p-3 text-center font-bold text-blue-900 cursor-pointer hover:bg-blue-200 transition-colors duration-150';
+                    td.title       = `Click to see all activities for ${user}`;
+                    td.addEventListener('click', () => openDetailModal(null, user, `${user}  ·  All clients`));
+                } else {
+                    td.textContent = '-';
+                    td.className   = 'border border-gray-300 p-3 text-center font-bold text-blue-900';
+                }
                 totTr.appendChild(td);
             });
 
+            // Grand total — clickable (everything)
             const gtd = document.createElement('td');
-            gtd.className = 'border border-gray-300 p-3 text-center font-bold bg-blue-200 text-blue-900';
             let grand = 0;
             matrixData.forEach(d => grand += getViewValue(d));
-            gtd.textContent = grand > 0 ? grand.toFixed(2) : '-';
+            if (grand > 0) {
+                gtd.textContent = grand.toFixed(2);
+                gtd.className   = 'border border-gray-300 p-3 text-center font-bold bg-blue-200 text-blue-900 cursor-pointer hover:bg-blue-300 transition-colors duration-150';
+                gtd.title       = 'Click to see ALL activities';
+                gtd.addEventListener('click', () => openDetailModal(null, null, 'All clients  ·  All employees'));
+            } else {
+                gtd.textContent = '-';
+                gtd.className   = 'border border-gray-300 p-3 text-center font-bold bg-blue-200 text-blue-900';
+            }
             totTr.appendChild(gtd);
             tbody.appendChild(totTr);
         }
@@ -324,19 +354,17 @@
                     ? 'bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg'
                     : 'bg-gray-300 text-gray-700 font-semibold py-2 px-6 rounded-lg';
             });
-            if (matrixData.length) {
-                buildMatrix(
-                    [...new Set(matrixData.map(d => d.client))].sort(),
-                    [...new Set(matrixData.map(d => d.user))].sort()
-                );
-            }
+            if (matrixData.length) buildMatrix(allClients, allUsers);
         }
 
         // ── Modal ─────────────────────────────────────────────────────────
-        function openDetailModal(client, user) {
-            const rows = rawRows.filter(r => r.client === client && r.user === user);
+        // client=null → all clients, user=null → all users
+        function openDetailModal(client, user, title) {
+            let rows = rawRows;
+            if (client) rows = rows.filter(r => r.client === client);
+            if (user)   rows = rows.filter(r => r.user   === user);
 
-            document.getElementById('modalTitle').textContent    = `${client}  ·  ${user}`;
+            document.getElementById('modalTitle').textContent = title;
             const dateVal = document.getElementById('filterDate').value;
             document.getElementById('modalSubtitle').textContent = dateVal ? `Date: ${dateVal}` : 'All dates in current filter';
 
@@ -352,17 +380,23 @@
             if (!rows.length) {
                 content.innerHTML = '<p class="text-gray-400 text-center p-8">No individual activity rows found.</p>';
             } else {
+                // Show extra columns when viewing across multiple clients/users
+                const showClient = !client;
+                const showUser   = !user;
+
                 let html = `
                 <table class="w-full border-collapse text-sm">
                     <thead>
-                        <tr class="bg-gray-100 text-gray-600 uppercase text-xs">
+                        <tr class="bg-gray-100 text-gray-600 uppercase text-xs sticky top-0">
                             <th class="border border-gray-300 p-2 text-left">Date</th>
+                            ${showClient ? '<th class="border border-gray-300 p-2 text-left">Client</th>' : ''}
+                            ${showUser   ? '<th class="border border-gray-300 p-2 text-left">Employee</th>' : ''}
                             <th class="border border-gray-300 p-2 text-left">Activity / Task</th>
+                            <th class="border border-gray-300 p-2 text-left">Description</th>
                             <th class="border border-gray-300 p-2 text-center text-blue-700">Planned</th>
                             <th class="border border-gray-300 p-2 text-center text-purple-700">Clockify</th>
                             <th class="border border-gray-300 p-2 text-center text-green-700">Effective</th>
                             <th class="border border-gray-300 p-2 text-center text-orange-700">Billed</th>
-                            <th class="border border-gray-300 p-2 text-left">Notes</th>
                         </tr>
                     </thead>
                     <tbody>`;
@@ -371,25 +405,27 @@
                     html += `
                     <tr class="${i%2===0?'bg-white':'bg-gray-50'} hover:bg-blue-50 transition-colors">
                         <td class="border border-gray-300 p-2 text-gray-600 whitespace-nowrap">${row.date || '-'}</td>
+                        ${showClient ? `<td class="border border-gray-300 p-2 text-gray-700 font-medium">${row.client || '-'}</td>` : ''}
+                        ${showUser   ? `<td class="border border-gray-300 p-2 text-gray-700 font-medium">${row.user || '-'}</td>` : ''}
                         <td class="border border-gray-300 p-2 font-medium text-gray-800">${row.activity || '-'}</td>
-                        <td class="border border-gray-300 p-2 text-center text-blue-700 font-semibold">${row.plannedHours  > 0 ? row.plannedHours.toFixed(2)  : '-'}</td>
-                        <td class="border border-gray-300 p-2 text-center text-purple-700 font-semibold">${row.clockifyHours > 0 ? row.clockifyHours.toFixed(2) : '-'}</td>
+                        <td class="border border-gray-300 p-2 text-gray-500 text-xs max-w-xs">${row.notes || ''}</td>
+                        <td class="border border-gray-300 p-2 text-center text-blue-700 font-semibold">${row.plannedHours   > 0 ? row.plannedHours.toFixed(2)   : '-'}</td>
+                        <td class="border border-gray-300 p-2 text-center text-purple-700 font-semibold">${row.clockifyHours  > 0 ? row.clockifyHours.toFixed(2)  : '-'}</td>
                         <td class="border border-gray-300 p-2 text-center text-green-700 font-semibold">${row.effectiveHours > 0 ? row.effectiveHours.toFixed(2) : '-'}</td>
-                        <td class="border border-gray-300 p-2 text-center text-orange-700 font-semibold">${row.billedHours   > 0 ? row.billedHours.toFixed(2)   : '-'}</td>
-                        <td class="border border-gray-300 p-2 text-gray-500 text-xs">${row.notes || ''}</td>
+                        <td class="border border-gray-300 p-2 text-center text-orange-700 font-semibold">${row.billedHours    > 0 ? row.billedHours.toFixed(2)    : '-'}</td>
                     </tr>`;
                 });
 
+                const extraCols = (showClient ? 1 : 0) + (showUser ? 1 : 0);
                 html += `
                     </tbody>
                     <tfoot>
                         <tr class="bg-blue-100 font-bold text-sm">
-                            <td class="border border-gray-300 p-2" colspan="2">Total</td>
+                            <td class="border border-gray-300 p-2" colspan="${2 + extraCols}">Total (${rows.length} rows)</td>
                             <td class="border border-gray-300 p-2 text-center text-blue-800">${tp.toFixed(2)}</td>
                             <td class="border border-gray-300 p-2 text-center text-purple-800">${tc.toFixed(2)}</td>
                             <td class="border border-gray-300 p-2 text-center text-green-800">${te.toFixed(2)}</td>
                             <td class="border border-gray-300 p-2 text-center text-orange-800">${tb.toFixed(2)}</td>
-                            <td class="border border-gray-300 p-2"></td>
                         </tr>
                     </tfoot>
                 </table>`;
