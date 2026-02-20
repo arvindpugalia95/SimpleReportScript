@@ -159,7 +159,6 @@
             setToday();
         });
 
-        // ── Filters ───────────────────────────────────────────────────────
         async function loadFilterOptions() {
             try {
                 const res    = await fetch(REPORT_SCRIPT_URL + '?action=getFilterOptions');
@@ -190,7 +189,6 @@
             ['filterDate','filterClient','filterUser'].forEach(id => document.getElementById(id).value = '');
         }
 
-        // ── Load Report ───────────────────────────────────────────────────
         async function loadReport() {
             showStatus('Loading report...', 'info');
             const date   = document.getElementById('filterDate').value;
@@ -223,7 +221,6 @@
             }
         }
 
-        // ── Matrix ────────────────────────────────────────────────────────
         function buildMatrix(clients, users) {
             const thead = document.querySelector('#matrixTable thead tr');
             const tbody = document.getElementById('matrixBody');
@@ -235,7 +232,6 @@
                 return;
             }
 
-            // Header columns
             users.forEach(u => {
                 const th = document.createElement('th');
                 th.className = 'border border-gray-300 p-3 text-center font-semibold';
@@ -247,7 +243,6 @@
             thTot.textContent = 'Total';
             thead.appendChild(thTot);
 
-            // Data rows
             clients.forEach(client => {
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-gray-50';
@@ -276,7 +271,7 @@
                     tr.appendChild(td);
                 });
 
-                // Row total — clickable (all users for this client)
+                // Row total — clickable
                 const rtd = document.createElement('td');
                 if (rowTotal > 0) {
                     rtd.textContent = rowTotal.toFixed(2);
@@ -316,7 +311,7 @@
                 totTr.appendChild(td);
             });
 
-            // Grand total — clickable (everything)
+            // Grand total — clickable
             const gtd = document.createElement('td');
             let grand = 0;
             matrixData.forEach(d => grand += getViewValue(d));
@@ -358,7 +353,6 @@
         }
 
         // ── Modal ─────────────────────────────────────────────────────────
-        // client=null → all clients, user=null → all users
         function openDetailModal(client, user, title) {
             let rows = rawRows;
             if (client) rows = rows.filter(r => r.client === client);
@@ -366,7 +360,9 @@
 
             document.getElementById('modalTitle').textContent = title;
             const dateVal = document.getElementById('filterDate').value;
-            document.getElementById('modalSubtitle').textContent = dateVal ? `Date: ${dateVal}` : 'All dates in current filter';
+            document.getElementById('modalSubtitle').textContent =
+                (dateVal ? `Date: ${dateVal}` : 'All dates in current filter') +
+                `  ·  ${rows.length} activit${rows.length === 1 ? 'y' : 'ies'}`;
 
             let tp=0, tc=0, te=0, tb=0;
             rows.forEach(r => { tp+=r.plannedHours; tc+=r.clockifyHours; te+=r.effectiveHours; tb+=r.billedHours; });
@@ -378,25 +374,24 @@
             const content = document.getElementById('modalContent');
 
             if (!rows.length) {
-                content.innerHTML = '<p class="text-gray-400 text-center p-8">No individual activity rows found.</p>';
+                content.innerHTML = '<p class="text-gray-400 text-center p-8">No activity rows found.</p>';
             } else {
-                // Show extra columns when viewing across multiple clients/users
                 const showClient = !client;
                 const showUser   = !user;
 
                 let html = `
                 <table class="w-full border-collapse text-sm">
-                    <thead>
-                        <tr class="bg-gray-100 text-gray-600 uppercase text-xs sticky top-0">
-                            <th class="border border-gray-300 p-2 text-left">Date</th>
+                    <thead class="sticky top-0 z-10">
+                        <tr class="bg-gray-100 text-gray-600 uppercase text-xs">
+                            <th class="border border-gray-300 p-2 text-left whitespace-nowrap">Date</th>
                             ${showClient ? '<th class="border border-gray-300 p-2 text-left">Client</th>' : ''}
                             ${showUser   ? '<th class="border border-gray-300 p-2 text-left">Employee</th>' : ''}
-                            <th class="border border-gray-300 p-2 text-left">Activity / Task</th>
-                            <th class="border border-gray-300 p-2 text-left">Description</th>
-                            <th class="border border-gray-300 p-2 text-center text-blue-700">Planned</th>
-                            <th class="border border-gray-300 p-2 text-center text-purple-700">Clockify</th>
-                            <th class="border border-gray-300 p-2 text-center text-green-700">Effective</th>
-                            <th class="border border-gray-300 p-2 text-center text-orange-700">Billed</th>
+                            <th class="border border-gray-300 p-2 text-left">Project</th>
+                            <th class="border border-gray-300 p-2 text-left">Activity Description</th>
+                            <th class="border border-gray-300 p-2 text-center text-blue-700 whitespace-nowrap">Planned</th>
+                            <th class="border border-gray-300 p-2 text-center text-purple-700 whitespace-nowrap">Clockify</th>
+                            <th class="border border-gray-300 p-2 text-center text-green-700 whitespace-nowrap">Effective</th>
+                            <th class="border border-gray-300 p-2 text-center text-orange-700 whitespace-nowrap">Billed</th>
                         </tr>
                     </thead>
                     <tbody>`;
@@ -405,10 +400,10 @@
                     html += `
                     <tr class="${i%2===0?'bg-white':'bg-gray-50'} hover:bg-blue-50 transition-colors">
                         <td class="border border-gray-300 p-2 text-gray-600 whitespace-nowrap">${row.date || '-'}</td>
-                        ${showClient ? `<td class="border border-gray-300 p-2 text-gray-700 font-medium">${row.client || '-'}</td>` : ''}
-                        ${showUser   ? `<td class="border border-gray-300 p-2 text-gray-700 font-medium">${row.user || '-'}</td>` : ''}
-                        <td class="border border-gray-300 p-2 font-medium text-gray-800">${row.activity || '-'}</td>
-                        <td class="border border-gray-300 p-2 text-gray-500 text-xs max-w-xs">${row.notes || ''}</td>
+                        ${showClient ? `<td class="border border-gray-300 p-2 text-gray-800 font-medium">${row.client || '-'}</td>` : ''}
+                        ${showUser   ? `<td class="border border-gray-300 p-2 text-gray-800 font-medium">${row.user || '-'}</td>` : ''}
+                        <td class="border border-gray-300 p-2 font-semibold text-indigo-700">${row.project || '-'}</td>
+                        <td class="border border-gray-300 p-2 text-gray-700">${row.activity || '-'}</td>
                         <td class="border border-gray-300 p-2 text-center text-blue-700 font-semibold">${row.plannedHours   > 0 ? row.plannedHours.toFixed(2)   : '-'}</td>
                         <td class="border border-gray-300 p-2 text-center text-purple-700 font-semibold">${row.clockifyHours  > 0 ? row.clockifyHours.toFixed(2)  : '-'}</td>
                         <td class="border border-gray-300 p-2 text-center text-green-700 font-semibold">${row.effectiveHours > 0 ? row.effectiveHours.toFixed(2) : '-'}</td>
@@ -421,7 +416,7 @@
                     </tbody>
                     <tfoot>
                         <tr class="bg-blue-100 font-bold text-sm">
-                            <td class="border border-gray-300 p-2" colspan="${2 + extraCols}">Total (${rows.length} rows)</td>
+                            <td class="border border-gray-300 p-2" colspan="${3 + extraCols}">Total (${rows.length} rows)</td>
                             <td class="border border-gray-300 p-2 text-center text-blue-800">${tp.toFixed(2)}</td>
                             <td class="border border-gray-300 p-2 text-center text-purple-800">${tc.toFixed(2)}</td>
                             <td class="border border-gray-300 p-2 text-center text-green-800">${te.toFixed(2)}</td>
