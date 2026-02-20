@@ -9,13 +9,14 @@
 <body class="bg-gray-50 min-h-screen p-6">
     <div class="max-w-7xl mx-auto">
         <div class="bg-white rounded-lg shadow-md p-8">
+
             <!-- Header -->
             <div class="mb-6 pb-4 border-b">
                 <h1 class="text-3xl font-bold text-gray-800">📊 Daily Activity Report</h1>
-                <p class="text-gray-600">Team hours summary by client</p>
+                <p class="text-gray-600">Team hours summary by client — <span class="text-blue-600 font-medium">click any hours cell to see full details</span></p>
             </div>
 
-            <!-- Filters Section -->
+            <!-- Filters -->
             <div class="mb-6 p-6 bg-blue-50 border-l-4 border-blue-600 rounded-lg">
                 <h2 class="text-xl font-bold text-blue-900 mb-4">🔍 Filters</h2>
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
@@ -42,12 +43,8 @@
                     </div>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="resetFilters()" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-lg transition duration-200">
-                        Reset
-                    </button>
-                    <button onclick="setToday()" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg transition duration-200">
-                        Today
-                    </button>
+                    <button onclick="resetFilters()" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-lg transition duration-200">Reset</button>
+                    <button onclick="setToday()" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg transition duration-200">Today</button>
                 </div>
             </div>
 
@@ -74,23 +71,15 @@
                 </div>
             </div>
 
-            <!-- Matrix View Toggle -->
-            <div class="mb-4 flex gap-2">
-                <button onclick="showView('planned')" id="btnPlanned" class="bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg">
-                    Planned Hours
-                </button>
-                <button onclick="showView('clockify')" id="btnClockify" class="bg-gray-300 text-gray-700 font-semibold py-2 px-6 rounded-lg">
-                    Clockify Hours
-                </button>
-                <button onclick="showView('effective')" id="btnEffective" class="bg-gray-300 text-gray-700 font-semibold py-2 px-6 rounded-lg">
-                    Effective Hours
-                </button>
-                <button onclick="showView('billed')" id="btnBilled" class="bg-gray-300 text-gray-700 font-semibold py-2 px-6 rounded-lg">
-                    Billed Hours
-                </button>
+            <!-- View Toggle -->
+            <div class="mb-4 flex gap-2 flex-wrap">
+                <button onclick="showView('planned')"   id="btnPlanned"   class="bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg">Planned Hours</button>
+                <button onclick="showView('clockify')"  id="btnClockify"  class="bg-gray-300 text-gray-700 font-semibold py-2 px-6 rounded-lg">Clockify Hours</button>
+                <button onclick="showView('effective')" id="btnEffective" class="bg-gray-300 text-gray-700 font-semibold py-2 px-6 rounded-lg">Effective Hours</button>
+                <button onclick="showView('billed')"    id="btnBilled"    class="bg-gray-300 text-gray-700 font-semibold py-2 px-6 rounded-lg">Billed Hours</button>
             </div>
 
-            <!-- Status Message -->
+            <!-- Status -->
             <div id="statusMessage" class="mb-4 hidden"></div>
 
             <!-- Matrix Table -->
@@ -99,14 +88,11 @@
                     <thead>
                         <tr class="bg-blue-600 text-white">
                             <th class="border border-gray-300 p-3 text-left font-semibold sticky left-0 bg-blue-600">Client</th>
-                            <!-- Employee columns will be added dynamically -->
                         </tr>
                     </thead>
                     <tbody id="matrixBody">
                         <tr>
-                            <td colspan="100" class="text-center p-8 text-gray-500">
-                                Click "Load Report" to view data
-                            </td>
+                            <td colspan="100" class="text-center p-8 text-gray-500">Click "Load Report" to view data</td>
                         </tr>
                     </tbody>
                 </table>
@@ -114,288 +100,324 @@
         </div>
     </div>
 
+    <!-- ========== DETAIL MODAL ========== -->
+    <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 items-center justify-center p-4" style="display:none;">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col">
+
+            <!-- Modal Header -->
+            <div class="p-6 border-b bg-blue-600 rounded-t-xl flex items-start justify-between">
+                <div>
+                    <h2 class="text-xl font-bold text-white" id="modalTitle">Activity Details</h2>
+                    <p class="text-blue-100 text-sm mt-1" id="modalSubtitle"></p>
+                </div>
+                <button onclick="closeModal()" class="text-white hover:text-blue-200 text-3xl font-bold leading-none ml-4">&times;</button>
+            </div>
+
+            <!-- Modal Summary Bar -->
+            <div class="px-6 py-4 bg-blue-50 border-b grid grid-cols-4 gap-4">
+                <div class="text-center">
+                    <p class="text-xs text-gray-500 uppercase font-semibold mb-1">Planned</p>
+                    <p class="text-xl font-bold text-blue-600" id="modalTotalPlanned">-</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-xs text-gray-500 uppercase font-semibold mb-1">Clockify</p>
+                    <p class="text-xl font-bold text-purple-600" id="modalTotalClockify">-</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-xs text-gray-500 uppercase font-semibold mb-1">Effective</p>
+                    <p class="text-xl font-bold text-green-600" id="modalTotalEffective">-</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-xs text-gray-500 uppercase font-semibold mb-1">Billed</p>
+                    <p class="text-xl font-bold text-orange-600" id="modalTotalBilled">-</p>
+                </div>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="overflow-y-auto flex-1 p-6" id="modalContent">
+                <p class="text-gray-400 text-center">Loading...</p>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-4 border-t flex justify-end">
+                <button onclick="closeModal()" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-8 rounded-lg transition">Close</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // IMPORTANT: Replace with your Google Apps Script URL
         const REPORT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw61B6jNnrquGFItO4pkauWs9CDaIoNdStb7uWFD7ggHr2F2adZOY2rzLiDvAp4vog3/exec';
 
-        let matrixData = [];
-        let currentView = 'planned'; // planned, clockify, effective, billed
+        let matrixData = [];  // aggregated per client+user
+        let rawRows    = [];  // every individual activity row — cached on load, no extra fetch needed
+        let currentView = 'planned';
 
-        // Load filter options on page load
         window.addEventListener('load', async () => {
             await loadFilterOptions();
             setToday();
         });
 
-        // Load filter dropdown options
+        // ── Filters ───────────────────────────────────────────────────────
         async function loadFilterOptions() {
             try {
-                const url = REPORT_SCRIPT_URL + '?action=getFilterOptions';
-                const response = await fetch(url);
-                const result = await response.json();
-
+                const res    = await fetch(REPORT_SCRIPT_URL + '?action=getFilterOptions');
+                const result = await res.json();
                 if (result.status === 'success') {
-                    // Populate client dropdown
-                    const clientSelect = document.getElementById('filterClient');
-                    result.clients.forEach(client => {
-                        const option = document.createElement('option');
-                        option.value = client;
-                        option.textContent = client;
-                        clientSelect.appendChild(option);
-                    });
-
-                    // Populate user dropdown
-                    const userSelect = document.getElementById('filterUser');
-                    result.users.forEach(user => {
-                        const option = document.createElement('option');
-                        option.value = user;
-                        option.textContent = user;
-                        userSelect.appendChild(option);
-                    });
+                    populateSelect('filterClient', result.clients);
+                    populateSelect('filterUser',   result.users);
                 }
-            } catch (error) {
-                console.error('Error loading filter options:', error);
-                showStatus('Error loading filters: ' + error.message, 'error');
+            } catch (err) {
+                showStatus('Error loading filters: ' + err.message, 'error');
             }
         }
 
-        // Set today's date
+        function populateSelect(id, items) {
+            const sel = document.getElementById(id);
+            items.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = opt.textContent = item;
+                sel.appendChild(opt);
+            });
+        }
+
         function setToday() {
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('filterDate').value = today;
+            document.getElementById('filterDate').value = new Date().toISOString().split('T')[0];
         }
 
-        // Reset filters
         function resetFilters() {
-            document.getElementById('filterDate').value = '';
-            document.getElementById('filterClient').value = '';
-            document.getElementById('filterUser').value = '';
+            ['filterDate','filterClient','filterUser'].forEach(id => document.getElementById(id).value = '');
         }
 
-        // Load report data
+        // ── Load Report ───────────────────────────────────────────────────
         async function loadReport() {
             showStatus('Loading report...', 'info');
-
-            const date = document.getElementById('filterDate').value;
+            const date   = document.getElementById('filterDate').value;
             const client = document.getElementById('filterClient').value;
-            const user = document.getElementById('filterUser').value;
+            const user   = document.getElementById('filterUser').value;
 
             try {
                 let url = REPORT_SCRIPT_URL + '?action=getMatrixData';
-                if (date) url += '&date=' + encodeURIComponent(date);
+                if (date)   url += '&date='   + encodeURIComponent(date);
                 if (client) url += '&client=' + encodeURIComponent(client);
-                if (user) url += '&user=' + encodeURIComponent(user);
+                if (user)   url += '&user='   + encodeURIComponent(user);
 
-                const response = await fetch(url);
-                const result = await response.json();
+                const res    = await fetch(url);
+                const result = await res.json();
 
                 if (result.status === 'success') {
                     matrixData = result.data;
+                    rawRows    = result.rawRows || [];   // individual rows cached here
                     buildMatrix(result.clients, result.users);
                     calculateTotals();
                     showStatus('Report loaded successfully!', 'success');
-                    setTimeout(() => hideStatus(), 3000);
+                    setTimeout(hideStatus, 3000);
                 } else {
                     showStatus('Error: ' + result.message, 'error');
                 }
-            } catch (error) {
-                console.error('Error loading report:', error);
-                showStatus('Error loading report: ' + error.message, 'error');
+            } catch (err) {
+                showStatus('Error loading report: ' + err.message, 'error');
             }
         }
 
-        // Build matrix table
+        // ── Matrix ────────────────────────────────────────────────────────
         function buildMatrix(clients, users) {
-            const table = document.getElementById('matrixTable');
-            const thead = table.querySelector('thead tr');
+            const thead = document.querySelector('#matrixTable thead tr');
             const tbody = document.getElementById('matrixBody');
-
-            // Clear existing content
             thead.innerHTML = '<th class="border border-gray-300 p-3 text-left font-semibold sticky left-0 bg-blue-600 z-10">Client</th>';
             tbody.innerHTML = '';
 
-            if (clients.length === 0 || users.length === 0) {
+            if (!clients.length || !users.length) {
                 tbody.innerHTML = '<tr><td colspan="100" class="text-center p-8 text-gray-500">No data found for selected filters</td></tr>';
                 return;
             }
 
-            // Add employee columns
-            users.forEach(user => {
+            users.forEach(u => {
                 const th = document.createElement('th');
                 th.className = 'border border-gray-300 p-3 text-center font-semibold';
-                th.textContent = user;
+                th.textContent = u;
                 thead.appendChild(th);
             });
+            const thTot = document.createElement('th');
+            thTot.className = 'border border-gray-300 p-3 text-center font-semibold bg-blue-700';
+            thTot.textContent = 'Total';
+            thead.appendChild(thTot);
 
-            // Add Total column
-            const totalTh = document.createElement('th');
-            totalTh.className = 'border border-gray-300 p-3 text-center font-semibold bg-blue-700';
-            totalTh.textContent = 'Total';
-            thead.appendChild(totalTh);
-
-            // Add data rows
             clients.forEach(client => {
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-gray-50';
 
-                // Client name cell
-                const clientTd = document.createElement('td');
-                clientTd.className = 'border border-gray-300 p-3 font-semibold bg-gray-50 sticky left-0';
-                clientTd.textContent = client;
-                tr.appendChild(clientTd);
+                const cTd = document.createElement('td');
+                cTd.className = 'border border-gray-300 p-3 font-semibold bg-gray-50 sticky left-0';
+                cTd.textContent = client;
+                tr.appendChild(cTd);
 
                 let rowTotal = 0;
-
-                // Employee cells
                 users.forEach(user => {
-                    const td = document.createElement('td');
-                    td.className = 'border border-gray-300 p-3 text-center';
+                    const td  = document.createElement('td');
+                    const dp  = matrixData.find(d => d.client === client && d.user === user);
+                    const val = dp ? getViewValue(dp) : 0;
 
-                    // Find matching data
-                    const dataPoint = matrixData.find(d => d.client === client && d.user === user);
-                    
-                    if (dataPoint) {
-                        let value = 0;
-                        switch(currentView) {
-                            case 'planned': value = dataPoint.plannedHours; break;
-                            case 'clockify': value = dataPoint.clockifyHours; break;
-                            case 'effective': value = dataPoint.effectiveHours; break;
-                            case 'billed': value = dataPoint.billedHours; break;
-                        }
-                        
-                        if (value > 0) {
-                            td.textContent = value.toFixed(2);
-                            td.className = 'border border-gray-300 p-3 text-center font-semibold text-blue-700';
-                            rowTotal += value;
-                        } else {
-                            td.textContent = '-';
-                            td.className = 'border border-gray-300 p-3 text-center text-gray-400';
-                        }
+                    if (val > 0) {
+                        td.textContent = val.toFixed(2);
+                        td.className   = 'border border-gray-300 p-3 text-center font-semibold text-blue-700 cursor-pointer hover:bg-blue-100 transition-colors duration-150';
+                        td.title       = `Click to see details`;
+                        td.addEventListener('click', () => openDetailModal(client, user));
+                        rowTotal += val;
                     } else {
                         td.textContent = '-';
-                        td.className = 'border border-gray-300 p-3 text-center text-gray-400';
+                        td.className   = 'border border-gray-300 p-3 text-center text-gray-300';
                     }
                     tr.appendChild(td);
                 });
 
-                // Row total cell
-                const totalTd = document.createElement('td');
-                totalTd.className = 'border border-gray-300 p-3 text-center font-bold bg-blue-100 text-blue-900';
-                totalTd.textContent = rowTotal > 0 ? rowTotal.toFixed(2) : '-';
-                tr.appendChild(totalTd);
-
+                const rtd = document.createElement('td');
+                rtd.className = 'border border-gray-300 p-3 text-center font-bold bg-blue-100 text-blue-900';
+                rtd.textContent = rowTotal > 0 ? rowTotal.toFixed(2) : '-';
+                tr.appendChild(rtd);
                 tbody.appendChild(tr);
             });
 
-            // Add totals row
-            const totalTr = document.createElement('tr');
-            totalTr.className = 'bg-blue-100 font-bold';
-
-            const totalLabelTd = document.createElement('td');
-            totalLabelTd.className = 'border border-gray-300 p-3 font-bold bg-blue-200 sticky left-0';
-            totalLabelTd.textContent = 'Total';
-            totalTr.appendChild(totalLabelTd);
+            // Totals row
+            const totTr = document.createElement('tr');
+            totTr.className = 'bg-blue-100 font-bold';
+            const totLabel = document.createElement('td');
+            totLabel.className = 'border border-gray-300 p-3 font-bold bg-blue-200 sticky left-0';
+            totLabel.textContent = 'Total';
+            totTr.appendChild(totLabel);
 
             users.forEach(user => {
                 const td = document.createElement('td');
                 td.className = 'border border-gray-300 p-3 text-center font-bold text-blue-900';
-                
-                let columnTotal = 0;
-                matrixData.forEach(d => {
-                    if (d.user === user) {
-                        switch(currentView) {
-                            case 'planned': columnTotal += d.plannedHours; break;
-                            case 'clockify': columnTotal += d.clockifyHours; break;
-                            case 'effective': columnTotal += d.effectiveHours; break;
-                            case 'billed': columnTotal += d.billedHours; break;
-                        }
-                    }
-                });
-                
-                td.textContent = columnTotal > 0 ? columnTotal.toFixed(2) : '-';
-                totalTr.appendChild(td);
+                let col = 0;
+                matrixData.forEach(d => { if (d.user === user) col += getViewValue(d); });
+                td.textContent = col > 0 ? col.toFixed(2) : '-';
+                totTr.appendChild(td);
             });
 
-            // Grand total cell
-            const grandTotalTd = document.createElement('td');
-            grandTotalTd.className = 'border border-gray-300 p-3 text-center font-bold bg-blue-200 text-blue-900';
-            let grandTotal = 0;
-            matrixData.forEach(d => {
-                switch(currentView) {
-                    case 'planned': grandTotal += d.plannedHours; break;
-                    case 'clockify': grandTotal += d.clockifyHours; break;
-                    case 'effective': grandTotal += d.effectiveHours; break;
-                    case 'billed': grandTotal += d.billedHours; break;
-                }
-            });
-            grandTotalTd.textContent = grandTotal > 0 ? grandTotal.toFixed(2) : '-';
-            totalTr.appendChild(grandTotalTd);
-
-            tbody.appendChild(totalTr);
+            const gtd = document.createElement('td');
+            gtd.className = 'border border-gray-300 p-3 text-center font-bold bg-blue-200 text-blue-900';
+            let grand = 0;
+            matrixData.forEach(d => grand += getViewValue(d));
+            gtd.textContent = grand > 0 ? grand.toFixed(2) : '-';
+            totTr.appendChild(gtd);
+            tbody.appendChild(totTr);
         }
 
-        // Calculate and display totals
+        function getViewValue(dp) {
+            return { planned: dp.plannedHours, clockify: dp.clockifyHours, effective: dp.effectiveHours, billed: dp.billedHours }[currentView] || 0;
+        }
+
         function calculateTotals() {
-            let totalPlanned = 0, totalClockify = 0, totalEffective = 0, totalBilled = 0;
-
-            matrixData.forEach(d => {
-                totalPlanned += d.plannedHours;
-                totalClockify += d.clockifyHours;
-                totalEffective += d.effectiveHours;
-                totalBilled += d.billedHours;
-            });
-
-            document.getElementById('totalPlanned').textContent = totalPlanned.toFixed(2);
-            document.getElementById('totalClockify').textContent = totalClockify.toFixed(2);
-            document.getElementById('totalEffective').textContent = totalEffective.toFixed(2);
-            document.getElementById('totalBilled').textContent = totalBilled.toFixed(2);
+            let p=0, c=0, e=0, b=0;
+            matrixData.forEach(d => { p+=d.plannedHours; c+=d.clockifyHours; e+=d.effectiveHours; b+=d.billedHours; });
+            document.getElementById('totalPlanned').textContent   = p.toFixed(2);
+            document.getElementById('totalClockify').textContent  = c.toFixed(2);
+            document.getElementById('totalEffective').textContent = e.toFixed(2);
+            document.getElementById('totalBilled').textContent    = b.toFixed(2);
         }
 
-        // Switch between different hour views
         function showView(view) {
             currentView = view;
-
-            // Update button styles
-            const buttons = {
-                'planned': document.getElementById('btnPlanned'),
-                'clockify': document.getElementById('btnClockify'),
-                'effective': document.getElementById('btnEffective'),
-                'billed': document.getElementById('btnBilled')
-            };
-
-            Object.keys(buttons).forEach(key => {
-                if (key === view) {
-                    buttons[key].className = 'bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg';
-                } else {
-                    buttons[key].className = 'bg-gray-300 text-gray-700 font-semibold py-2 px-6 rounded-lg';
-                }
+            ['planned','clockify','effective','billed'].forEach(v => {
+                const btn = document.getElementById('btn' + v.charAt(0).toUpperCase() + v.slice(1));
+                btn.className = v === view
+                    ? 'bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg'
+                    : 'bg-gray-300 text-gray-700 font-semibold py-2 px-6 rounded-lg';
             });
-
-            // Rebuild matrix if data exists
-            if (matrixData.length > 0) {
-                const clients = [...new Set(matrixData.map(d => d.client))].sort();
-                const users = [...new Set(matrixData.map(d => d.user))].sort();
-                buildMatrix(clients, users);
+            if (matrixData.length) {
+                buildMatrix(
+                    [...new Set(matrixData.map(d => d.client))].sort(),
+                    [...new Set(matrixData.map(d => d.user))].sort()
+                );
             }
         }
 
-        // Show status message
-        function showStatus(message, type) {
-            const statusDiv = document.getElementById('statusMessage');
-            const colors = {
-                'success': 'bg-green-100 border-green-400 text-green-800',
-                'error': 'bg-red-100 border-red-400 text-red-800',
-                'info': 'bg-blue-100 border-blue-400 text-blue-800'
-            };
-            statusDiv.className = `p-4 border rounded-lg ${colors[type]}`;
-            statusDiv.textContent = message;
-            statusDiv.classList.remove('hidden');
+        // ── Modal ─────────────────────────────────────────────────────────
+        function openDetailModal(client, user) {
+            const rows = rawRows.filter(r => r.client === client && r.user === user);
+
+            document.getElementById('modalTitle').textContent    = `${client}  ·  ${user}`;
+            const dateVal = document.getElementById('filterDate').value;
+            document.getElementById('modalSubtitle').textContent = dateVal ? `Date: ${dateVal}` : 'All dates in current filter';
+
+            let tp=0, tc=0, te=0, tb=0;
+            rows.forEach(r => { tp+=r.plannedHours; tc+=r.clockifyHours; te+=r.effectiveHours; tb+=r.billedHours; });
+            document.getElementById('modalTotalPlanned').textContent   = tp.toFixed(2);
+            document.getElementById('modalTotalClockify').textContent  = tc.toFixed(2);
+            document.getElementById('modalTotalEffective').textContent = te.toFixed(2);
+            document.getElementById('modalTotalBilled').textContent    = tb.toFixed(2);
+
+            const content = document.getElementById('modalContent');
+
+            if (!rows.length) {
+                content.innerHTML = '<p class="text-gray-400 text-center p-8">No individual activity rows found.</p>';
+            } else {
+                let html = `
+                <table class="w-full border-collapse text-sm">
+                    <thead>
+                        <tr class="bg-gray-100 text-gray-600 uppercase text-xs">
+                            <th class="border border-gray-300 p-2 text-left">Date</th>
+                            <th class="border border-gray-300 p-2 text-left">Activity / Task</th>
+                            <th class="border border-gray-300 p-2 text-center text-blue-700">Planned</th>
+                            <th class="border border-gray-300 p-2 text-center text-purple-700">Clockify</th>
+                            <th class="border border-gray-300 p-2 text-center text-green-700">Effective</th>
+                            <th class="border border-gray-300 p-2 text-center text-orange-700">Billed</th>
+                            <th class="border border-gray-300 p-2 text-left">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+                rows.forEach((row, i) => {
+                    html += `
+                    <tr class="${i%2===0?'bg-white':'bg-gray-50'} hover:bg-blue-50 transition-colors">
+                        <td class="border border-gray-300 p-2 text-gray-600 whitespace-nowrap">${row.date || '-'}</td>
+                        <td class="border border-gray-300 p-2 font-medium text-gray-800">${row.activity || '-'}</td>
+                        <td class="border border-gray-300 p-2 text-center text-blue-700 font-semibold">${row.plannedHours  > 0 ? row.plannedHours.toFixed(2)  : '-'}</td>
+                        <td class="border border-gray-300 p-2 text-center text-purple-700 font-semibold">${row.clockifyHours > 0 ? row.clockifyHours.toFixed(2) : '-'}</td>
+                        <td class="border border-gray-300 p-2 text-center text-green-700 font-semibold">${row.effectiveHours > 0 ? row.effectiveHours.toFixed(2) : '-'}</td>
+                        <td class="border border-gray-300 p-2 text-center text-orange-700 font-semibold">${row.billedHours   > 0 ? row.billedHours.toFixed(2)   : '-'}</td>
+                        <td class="border border-gray-300 p-2 text-gray-500 text-xs">${row.notes || ''}</td>
+                    </tr>`;
+                });
+
+                html += `
+                    </tbody>
+                    <tfoot>
+                        <tr class="bg-blue-100 font-bold text-sm">
+                            <td class="border border-gray-300 p-2" colspan="2">Total</td>
+                            <td class="border border-gray-300 p-2 text-center text-blue-800">${tp.toFixed(2)}</td>
+                            <td class="border border-gray-300 p-2 text-center text-purple-800">${tc.toFixed(2)}</td>
+                            <td class="border border-gray-300 p-2 text-center text-green-800">${te.toFixed(2)}</td>
+                            <td class="border border-gray-300 p-2 text-center text-orange-800">${tb.toFixed(2)}</td>
+                            <td class="border border-gray-300 p-2"></td>
+                        </tr>
+                    </tfoot>
+                </table>`;
+                content.innerHTML = html;
+            }
+
+            document.getElementById('detailModal').style.display = 'flex';
         }
 
-        // Hide status message
-        function hideStatus() {
-            document.getElementById('statusMessage').classList.add('hidden');
+        function closeModal() {
+            document.getElementById('detailModal').style.display = 'none';
         }
+
+        document.getElementById('detailModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+        function showStatus(msg, type) {
+            const el = document.getElementById('statusMessage');
+            const c  = { success:'bg-green-100 border-green-400 text-green-800', error:'bg-red-100 border-red-400 text-red-800', info:'bg-blue-100 border-blue-400 text-blue-800' };
+            el.className = `p-4 border rounded-lg ${c[type]}`;
+            el.textContent = msg;
+            el.classList.remove('hidden');
+        }
+
+        function hideStatus() { document.getElementById('statusMessage').classList.add('hidden'); }
     </script>
 </body>
 </html>
