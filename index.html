@@ -102,7 +102,7 @@
 
     <!-- ========== DETAIL MODAL ========== -->
     <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 items-center justify-center p-4" style="display:none;">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-7xl max-h-[90vh] flex flex-col">
 
             <!-- Modal Header -->
             <div class="p-6 border-b bg-blue-600 rounded-t-xl flex items-start justify-between">
@@ -271,7 +271,6 @@
                     tr.appendChild(td);
                 });
 
-                // Row total — clickable
                 const rtd = document.createElement('td');
                 if (rowTotal > 0) {
                     rtd.textContent = rowTotal.toFixed(2);
@@ -311,7 +310,6 @@
                 totTr.appendChild(td);
             });
 
-            // Grand total — clickable
             const gtd = document.createElement('td');
             let grand = 0;
             matrixData.forEach(d => grand += getViewValue(d));
@@ -387,16 +385,22 @@
                             ${showClient ? '<th class="border border-gray-300 p-2 text-left">Client</th>' : ''}
                             ${showUser   ? '<th class="border border-gray-300 p-2 text-left">Employee</th>' : ''}
                             <th class="border border-gray-300 p-2 text-left">Project</th>
-                            <th class="border border-gray-300 p-2 text-left">Activity Description</th>
+                            <th class="border border-gray-300 p-2 text-left">Activity</th>
+                            <th class="border border-gray-300 p-2 text-left">Actual Activity</th>
                             <th class="border border-gray-300 p-2 text-center text-blue-700 whitespace-nowrap">Planned</th>
                             <th class="border border-gray-300 p-2 text-center text-purple-700 whitespace-nowrap">Clockify</th>
                             <th class="border border-gray-300 p-2 text-center text-green-700 whitespace-nowrap">Effective</th>
                             <th class="border border-gray-300 p-2 text-center text-orange-700 whitespace-nowrap">Billed</th>
+                            <th class="border border-gray-300 p-2 text-center whitespace-nowrap">Source</th>
                         </tr>
                     </thead>
                     <tbody>`;
 
                 rows.forEach((row, i) => {
+                    const sourceBadge = row.source === 'Planned'
+                        ? '<span class="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded text-xs font-medium">Planned</span>'
+                        : '<span class="bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs font-medium">Submitted</span>';
+
                     html += `
                     <tr class="${i%2===0?'bg-white':'bg-gray-50'} hover:bg-blue-50 transition-colors">
                         <td class="border border-gray-300 p-2 text-gray-600 whitespace-nowrap">${row.date || '-'}</td>
@@ -404,10 +408,12 @@
                         ${showUser   ? `<td class="border border-gray-300 p-2 text-gray-800 font-medium">${row.user || '-'}</td>` : ''}
                         <td class="border border-gray-300 p-2 font-semibold text-indigo-700">${row.project || '-'}</td>
                         <td class="border border-gray-300 p-2 text-gray-700">${row.activity || '-'}</td>
+                        <td class="border border-gray-300 p-2 text-gray-600 italic">${row.actualActivity || '-'}</td>
                         <td class="border border-gray-300 p-2 text-center text-blue-700 font-semibold">${row.plannedHours   > 0 ? row.plannedHours.toFixed(2)   : '-'}</td>
                         <td class="border border-gray-300 p-2 text-center text-purple-700 font-semibold">${row.clockifyHours  > 0 ? row.clockifyHours.toFixed(2)  : '-'}</td>
                         <td class="border border-gray-300 p-2 text-center text-green-700 font-semibold">${row.effectiveHours > 0 ? row.effectiveHours.toFixed(2) : '-'}</td>
                         <td class="border border-gray-300 p-2 text-center text-orange-700 font-semibold">${row.billedHours    > 0 ? row.billedHours.toFixed(2)    : '-'}</td>
+                        <td class="border border-gray-300 p-2 text-center">${sourceBadge}</td>
                     </tr>`;
                 });
 
@@ -416,11 +422,12 @@
                     </tbody>
                     <tfoot>
                         <tr class="bg-blue-100 font-bold text-sm">
-                            <td class="border border-gray-300 p-2" colspan="${3 + extraCols}">Total (${rows.length} rows)</td>
+                            <td class="border border-gray-300 p-2" colspan="${4 + extraCols}">Total (${rows.length} rows)</td>
                             <td class="border border-gray-300 p-2 text-center text-blue-800">${tp.toFixed(2)}</td>
                             <td class="border border-gray-300 p-2 text-center text-purple-800">${tc.toFixed(2)}</td>
                             <td class="border border-gray-300 p-2 text-center text-green-800">${te.toFixed(2)}</td>
                             <td class="border border-gray-300 p-2 text-center text-orange-800">${tb.toFixed(2)}</td>
+                            <td class="border border-gray-300 p-2"></td>
                         </tr>
                     </tfoot>
                 </table>`;
